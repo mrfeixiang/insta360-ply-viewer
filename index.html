@@ -282,6 +282,7 @@
         </div>
         <div class="nav-links">
             <a href="#viewer-section" class="active">Viewer</a>
+            <a href="#gallery">Gallery</a>
             <a href="#workflow">Workflow</a>
             <a href="#tools">Tools</a>
             <a href="#share">Share</a>
@@ -628,6 +629,9 @@
             loadingOverlay.classList.remove('show');
         }
 
+        // Expose globally for gallery
+        window._loadPLY = loadPLY;
+
         function loadPLY(buffer, filename) {
             showLoading('Parsing PLY data...');
             progressFill.style.width = '30%';
@@ -821,7 +825,7 @@
             dropZone.classList.add('hidden');
             progressFill.style.width = '10%';
 
-            fetch('demo_scene.ply')
+            fetch('scenes/scene_today.ply')
                 .then(response => {
                     if (!response.ok) throw new Error('Demo file not found');
                     const total = parseInt(response.headers.get('content-length')) || 0;
@@ -932,32 +936,116 @@
         };
     </script>
 
-    <!-- DEMO BUTTONS (added after script to use window.generateDemo) -->
-    <section style="max-width:1200px;margin:0 auto;padding:0 24px 80px;">
-        <h2>Try Demo Scenes</h2>
-        <p class="subtitle">No PLY file? Try these generated point cloud demos</p>
-        <div class="demo-grid">
-            <div class="demo-card" onclick="loadInsta360Demo()" style="border-color: var(--accent); background: linear-gradient(135deg, var(--surface), rgba(108,92,231,0.08));">
-                <h4 style="color: var(--accent2);">Insta360 X5 Real Scene</h4>
-                <p>148K-point cloud captured with Insta360 X5 camera. Real 360 data! (3.8 MB)</p>
+    <!-- SCENE GALLERY -->
+    <section id="gallery" style="max-width:1200px;margin:0 auto;padding:0 24px 80px;">
+        <h2>Insta360 X5 Scene Gallery</h2>
+        <p class="subtitle">Real 3D point clouds captured with Insta360 X5. Tap any scene to load it in the viewer above.</p>
+        <div class="demo-grid" id="scene-gallery">
+            <div class="demo-card" onclick="loadScene('scenes/scene_today.ply', 'Today\'s Scene')" style="border-color: var(--accent); background: linear-gradient(135deg, var(--surface), rgba(108,92,231,0.08));">
+                <h4 style="color: var(--accent2);">Today's Capture</h4>
+                <p>Nov 16, 2026 - Latest capture from Insta360 X5</p>
                 <span class="tag tag-splat">Insta360 X5</span>
             </div>
-            <div class="demo-card" onclick="generateDemo('sphere')">
-                <h4>Sphere Cloud</h4>
-                <p>50,000-point sphere with color gradient. Great for testing controls.</p>
-                <span class="tag tag-ply">Point Cloud</span>
+            <div class="demo-card" onclick="loadScene('scenes/scene_nov13.ply', 'Nov 13 Scene')">
+                <h4>Nov 13 Scene</h4>
+                <p>November 13, 2026 capture</p>
+                <span class="tag tag-splat">Insta360 X5</span>
             </div>
-            <div class="demo-card" onclick="generateDemo('room')">
-                <h4>Room Scan</h4>
-                <p>Simulated indoor room scan. Similar to Insta360 spatial capture output.</p>
-                <span class="tag tag-splat">Spatial</span>
+            <div class="demo-card" onclick="loadScene('scenes/scene_oct4.ply', 'Oct 4 Scene')">
+                <h4>October 4 Scene</h4>
+                <p>October 4, 2026 capture</p>
+                <span class="tag tag-splat">Insta360 X5</span>
             </div>
-            <div class="demo-card" onclick="generateDemo('spiral')">
-                <h4>Spiral Helix</h4>
-                <p>Colorful spiral point cloud. Demonstrates point size and rotation controls.</p>
-                <span class="tag tag-ply">Point Cloud</span>
+            <div class="demo-card" onclick="loadScene('scenes/scene_oct8.ply', 'Oct 8 Scene')">
+                <h4>October 8 Scene</h4>
+                <p>October 8, 2026 capture</p>
+                <span class="tag tag-splat">Insta360 X5</span>
+            </div>
+            <div class="demo-card" onclick="loadScene('scenes/scene_jul13.ply', 'Jul 13 Scene')">
+                <h4>July 13 Scene</h4>
+                <p>July 13, 2026 capture</p>
+                <span class="tag tag-splat">Insta360 X5</span>
+            </div>
+            <div class="demo-card" onclick="loadScene('scenes/scene_apr26a.ply', 'Apr 26 Scene A')">
+                <h4>April 26 Scene A</h4>
+                <p>April 26, 2026 - Evening capture</p>
+                <span class="tag tag-splat">Insta360 X5</span>
+            </div>
+            <div class="demo-card" onclick="loadScene('scenes/scene_apr26b.ply', 'Apr 26 Scene B')">
+                <h4>April 26 Scene B</h4>
+                <p>April 26, 2026 - Afternoon capture</p>
+                <span class="tag tag-splat">Insta360 X5</span>
+            </div>
+        </div>
+        <div style="margin-top: 24px;">
+            <h3 style="color: var(--text2); font-size: 16px; margin-bottom: 12px;">Generated Demos</h3>
+            <div class="demo-grid">
+                <div class="demo-card" onclick="generateDemo('sphere')">
+                    <h4>Sphere Cloud</h4>
+                    <p>50K-point sphere. Test controls.</p>
+                    <span class="tag tag-ply">Generated</span>
+                </div>
+                <div class="demo-card" onclick="generateDemo('room')">
+                    <h4>Room Scan</h4>
+                    <p>Simulated room scan.</p>
+                    <span class="tag tag-ply">Generated</span>
+                </div>
+                <div class="demo-card" onclick="generateDemo('spiral')">
+                    <h4>Spiral Helix</h4>
+                    <p>Colorful spiral cloud.</p>
+                    <span class="tag tag-ply">Generated</span>
+                </div>
             </div>
         </div>
     </section>
+
+    <script>
+        // Scene loader function
+        window.loadScene = function(url, name) {
+            const loadingOverlay = document.getElementById('loading');
+            const loadingText = document.getElementById('loading-text');
+            const progressFill = document.getElementById('progress-fill');
+            const dropZone = document.getElementById('drop-zone');
+
+            loadingOverlay.classList.add('show');
+            loadingText.textContent = `Loading ${name}...`;
+            progressFill.style.width = '5%';
+            dropZone.classList.add('hidden');
+
+            // Scroll to viewer
+            document.getElementById('viewer-section').scrollIntoView({ behavior: 'smooth' });
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error(`Scene not available yet (${response.status})`);
+                    const total = parseInt(response.headers.get('content-length')) || 0;
+                    const reader = response.body.getReader();
+                    const chunks = [];
+                    let received = 0;
+
+                    function pump() {
+                        return reader.read().then(({ done, value }) => {
+                            if (done) return new Blob(chunks).arrayBuffer();
+                            chunks.push(value);
+                            received += value.length;
+                            if (total > 0) progressFill.style.width = (5 + received/total*70) + '%';
+                            return pump();
+                        });
+                    }
+                    return pump();
+                })
+                .then(buffer => {
+                    // loadPLY is defined in the module script above
+                    if (window._loadPLY) {
+                        window._loadPLY(buffer, name);
+                    }
+                })
+                .catch(err => {
+                    loadingOverlay.classList.remove('show');
+                    dropZone.classList.remove('hidden');
+                    alert('Could not load scene: ' + err.message + '\n\nThis scene may still be processing.');
+                });
+        };
+    </script>
 </body>
 </html>

@@ -815,6 +815,41 @@
 
         document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
 
+        // ── LOAD REAL INSTA360 DEMO ──
+        window.loadInsta360Demo = function() {
+            showLoading('Loading Insta360 X5 point cloud...');
+            dropZone.classList.add('hidden');
+            progressFill.style.width = '10%';
+
+            fetch('demo_scene.ply')
+                .then(response => {
+                    if (!response.ok) throw new Error('Demo file not found');
+                    const total = parseInt(response.headers.get('content-length')) || 0;
+                    const reader = response.body.getReader();
+                    const chunks = [];
+                    let received = 0;
+
+                    function pump() {
+                        return reader.read().then(({ done, value }) => {
+                            if (done) return new Blob(chunks).arrayBuffer();
+                            chunks.push(value);
+                            received += value.length;
+                            if (total > 0) progressFill.style.width = (10 + received/total*60) + '%';
+                            return pump();
+                        });
+                    }
+                    return pump();
+                })
+                .then(buffer => {
+                    loadPLY(buffer, 'Insta360 X5 Scene (demo_scene.ply)');
+                })
+                .catch(err => {
+                    hideLoading();
+                    dropZone.classList.remove('hidden');
+                    alert('Could not load demo: ' + err.message);
+                });
+        };
+
         // ── GENERATE DEMO POINT CLOUD ──
         window.generateDemo = function(type) {
             showLoading('Generating demo point cloud...');
@@ -902,6 +937,11 @@
         <h2>Try Demo Scenes</h2>
         <p class="subtitle">No PLY file? Try these generated point cloud demos</p>
         <div class="demo-grid">
+            <div class="demo-card" onclick="loadInsta360Demo()" style="border-color: var(--accent); background: linear-gradient(135deg, var(--surface), rgba(108,92,231,0.08));">
+                <h4 style="color: var(--accent2);">Insta360 X5 Real Scene</h4>
+                <p>148K-point cloud captured with Insta360 X5 camera. Real 360 data! (3.8 MB)</p>
+                <span class="tag tag-splat">Insta360 X5</span>
+            </div>
             <div class="demo-card" onclick="generateDemo('sphere')">
                 <h4>Sphere Cloud</h4>
                 <p>50,000-point sphere with color gradient. Great for testing controls.</p>
